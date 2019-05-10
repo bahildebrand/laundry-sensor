@@ -1,3 +1,12 @@
+#ifndef __MMA8451_registers_H
+#define __MMA8451_registers_H
+
+/* Output Registers */
+#define OUT_X_MSB 0x01
+#define OUT_Y_MSB 0x03
+#define OUT_Z_MSB 0x05
+
+
 #define XYZ_DATA_CFG 0x0E
 
 /* Freefall/Motion Detection */
@@ -11,9 +20,9 @@
 #define OAE         (1 << 6)
 #define ELE         (1 << 7)
 
-#define FF_MT_SRC   0x16 /* Source              */ 
+#define FF_MT_SRC   0x16 /* Source              */
 #define FF_MT_THS   0x17 /* Theshold            */
-#define FF_MT_COUNT 0x18 /* Debounce counter    */   
+#define FF_MT_COUNT 0x18 /* Debounce counter    */
 
 #define TRANS_CFG   0x1D /* Transient config    */
 #define TRANS_THS   0x1F /* Transient threshold */
@@ -28,7 +37,7 @@
 #define CTRL_REG2   0X2b /* Sys control 2       */
 
 /* Interrupt Sleep Control */
-#define CTRL_REG3   0x2C 
+#define CTRL_REG3   0x2C
 #define PP_OD       (1 << 0)    /* 0:Push-Pull 1:Open-Drain     */
 #define IPOL        (1 << 1)    /* Int polarity 0:low 1:high    */
 /* BIT 2 NOT USED */
@@ -38,7 +47,7 @@
 #define WAKE_TRANS  (1 << 6)    /* Transient 0:dis 1:en         */
 #define FIFO_GATE   (1 << 7)    /* Fifo gate 0:bypass 1:block   */
 
-/* Interrupt Enable 
+/* Interrupt Enable
  * All interrupts enabled when set, disabled when cleared
  * */
 #define CTRL_REG4   0x2D
@@ -51,7 +60,7 @@
 #define INT_EN_FIFO   (1 << 6)  /* FIFO                 */
 #define INT_EN_ASLP   (1 << 7)  /* Auto-Sleep/Wake      */
 
-/* 
+/*
  * Interrupt Pin routing - 0 for INT2, 1 for INT1
  * */
 #define CTRL_REG5   0x2E
@@ -63,3 +72,5 @@
 #define INT_CFG_TRANS  (1 << 5)  /* Transient            */
 #define INT_CFG_FIFO   (1 << 6)  /* FIFO                 */
 #define INT_CFG_ASLP   (1 << 7)  /* Auto-Sleep/Wake      */
+
+#endif

@@ -124,7 +124,7 @@ static void  mqtt_task(void *pvParameters)
         while(1){
 
             char msg[PUB_MSG_LEN - 1] = "msg\0";
-                
+
             mqtt_message_t message;
             message.payload = msg;
             message.payloadlen = PUB_MSG_LEN;
@@ -141,7 +141,7 @@ static void  mqtt_task(void *pvParameters)
             {
                 printf("message sent");
             }
-            
+
 
             ret = mqtt_yield(&client, 1000);
             if (ret == MQTT_DISCONNECTED)
@@ -204,7 +204,11 @@ static void  wifi_task(void *pvParameters)
 
 static void accel_task(void *pvParameters)
 {
-    vTaskDelay( 1000 / portTICK_PERIOD_MS );
+    while(1)
+    {
+        read_accel();
+        vTaskDelay( 500 / portTICK_PERIOD_MS );
+    }
 }
 
 void user_init(void)
@@ -219,5 +223,5 @@ void user_init(void)
 
     xTaskCreate(&wifi_task, "wifi_task",  256, NULL, 2, NULL);
     // xTaskCreate(&mqtt_task, "mqtt_task", 1024, NULL, 4, NULL);
-    // xTaskCreate(&accel_task, "accel_task", 1024, NULL, 4, NULL);
+    xTaskCreate(&accel_task, "accel_task", 1024, NULL, 4, NULL);
 }
