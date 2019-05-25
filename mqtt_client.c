@@ -32,21 +32,6 @@ uint8_t slave_addr = 0x20;
 uint8_t reg_addr = 0x1f;
 uint8_t reg_data;
 
-static void  topic_received(mqtt_message_data_t *md)
-{
-    int i;
-    mqtt_message_t *message = md->message;
-    printf("Received: ");
-    for( i = 0; i < md->topic->lenstring.len; ++i)
-        printf("%c", md->topic->lenstring.data[ i ]);
-
-    printf(" = ");
-    for( i = 0; i < (int)message->payloadlen; ++i)
-        printf("%c", ((char *)(message->payload))[i]);
-
-    printf("\r\n");
-}
-
 static const char *  get_my_id(void)
 {
     // Use MAC address for Station as unique ID
@@ -119,19 +104,19 @@ static void  mqtt_task(void *pvParameters)
             continue;
         }
         printf("done\r\n");
-        mqtt_subscribe(&client, "/esptopic", MQTT_QOS1, topic_received);
 
         while(1){
+            accel_msg_s msg;
 
-            char msg[PUB_MSG_LEN - 1] = "msg\0";
-
+            xQueueReceive(publish_queue, &msg, portMAX_DELAY);
+            printf("%d\n", msg.data);
             mqtt_message_t message;
-            message.payload = msg;
-            message.payloadlen = PUB_MSG_LEN;
+            message.payload = &msg;
+            message.payloadlen = sizeof(accel_msg_s);
             message.dup = 0;
             message.qos = MQTT_QOS1;
             message.retained = 0;
-            ret = mqtt_publish(&client, "house/laundry", &message);
+            ret = mqtt_publish(&client, "house/laundry/log", &message);
             if (ret != MQTT_SUCCESS )
             {
                 printf("error while publishing message: %d\n", ret );
@@ -139,16 +124,15 @@ static void  mqtt_task(void *pvParameters)
             }
             else
             {
-                printf("message sent");
+                printf("message sent\n");
             }
 
 
             ret = mqtt_yield(&client, 1000);
             if (ret == MQTT_DISCONNECTED)
                 break;
-
-            vTaskDelay(1000 / portTICK_PERIOD_MS);
         }
+
         printf("Connection dropped, request restart\n\r");
         mqtt_network_disconnect(&network);
         taskYIELD();
@@ -204,10 +188,12 @@ static void  wifi_task(void *pvParameters)
 
 static void accel_task(void *pvParameters)
 {
+    accel_msg_s msg;
     while(1)
     {
-        read_accel();
-        vTaskDelay( 500 / portTICK_PERIOD_MS );
+        msg = read_accel();
+        xQueueSend(publish_queue, (void*)&msg, 0);
+        vTaskDelay( 5000 / portTICK_PERIOD_MS );
     }
 }
 
@@ -217,11 +203,10 @@ void user_init(void)
     printf("SDK version:%s\n", sdk_system_get_sdk_version());
 
     vSemaphoreCreateBinary(wifi_alive);
-    publish_queue = xQueueCreate(3, PUB_MSG_LEN);
+    publish_queue = xQueueCreate(10, sizeof(accel_msg_s));
     accel_init();
 
-
     xTaskCreate(&wifi_task, "wifi_task",  256, NULL, 2, NULL);
-    // xTaskCreate(&mqtt_task, "mqtt_task", 1024, NULL, 4, NULL);
+    xTaskCreate(&mqtt_task, "mqtt_task", 1024, NULL, 4, NULL);
     xTaskCreate(&accel_task, "accel_task", 1024, NULL, 4, NULL);
 }

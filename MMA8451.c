@@ -1,8 +1,10 @@
 #include <i2c/i2c.h>
+#include <sys/time.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include "MMA8451_registers.h"
+#include "MMA8451.h"
 
 #define I2C_BUS 0
 #define SCL_PIN (5)
@@ -114,29 +116,37 @@ void setup_transient_int()
  * MSB                          LSB
  * 00000000ZZZZZZZZYYYYYYYYXXXXXXXX
  */
-uint32_t read_accel()
+accel_msg_s read_accel()
 {
     uint8_t data;
     uint8_t reg;
-    uint32_t combined_read;
-    //clear interrupt
+    accel_msg_s msg;
+
+    memset(&msg, 0, sizeof(accel_msg_s));
+
+    struct timeval tv;
+    int ret = gettimeofday(&tv, NULL);
+    printf("%un\n", time(NULL));
+    msg.timestamp = tv.tv_sec;
+    printf("err: %d\n", ret);
+    printf("time: %u\n", msg.timestamp);
 
     reg = OUT_X_MSB;
     i2c_slave_read(I2C_BUS, DEV_ADDR, &reg, &data, 1);
-    combined_read = (uint32_t)data;
+    msg.data = (uint32_t)data;
     printf("X: %d\n", data);
 
     reg = OUT_Y_MSB;
     i2c_slave_read(I2C_BUS, DEV_ADDR, &reg, &data, 1);
-    combined_read |= (uint32_t)data << 8;
+    msg.data |= (uint32_t)data << 8;
     printf("Y: %d\n", data);
 
     reg = OUT_Z_MSB;
     i2c_slave_read(I2C_BUS, DEV_ADDR, &reg, &data, 1);
-    combined_read |= (uint32_t)data << 16;
+    msg.data |= (uint32_t)data << 16;
     printf("Z: %d\n", data);
 
-    return combined_read;
+    return msg;
 }
 
 /**
